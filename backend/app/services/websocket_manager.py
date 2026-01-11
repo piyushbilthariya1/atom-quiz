@@ -71,68 +71,113 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error sending personal message: {e}")
 
+    async def handle_command(self, room_code: str, player_id: str, message: dict):
+        if room_code not in self.room_states:
+            return
+
+        cmd_type = message.get("type")
+        payload = message.get("payload", {})
+        state = self.room_states[room_code]
+
+        if cmd_type == "start_game":
+            # Only host should call this? We assume host logic is handled by frontend access or basic separate endpoint, 
+            # but usually websockets are open. For MVP, we trust the command.
+            state["status"] = "countdown"
+            state["current_question"] = -1
+            self.room_states[room_code] = state # Persist
+            
+            # Broadcast start
+            await self.broadcast(room_code, {"type": "game_start"})
+            
+            # Start first question after delay? Or host triggers next?
+            # HostView logic implies manual "Start" then maybe manual "Next"?
+            # Let's assume Host triggers "Next Question" manually after splash.
+
+        elif cmd_type == "next_question":
+            current_q = state.get("current_question", -1)
+            questions = state.get("questions", [])
+            next_idx = current_q + 1
+
+            if next_idx < len(questions):
+                state["current_question"] = next_idx
+                state["status"] = "question"
+                self.room_states[room_code] = state
+
+                question = questions[next_idx]
+                
+                # Broadcast new question
+                await self.broadcast(room_code, {
+                    "type": "new_question",
+                    "payload": {
+                        "question": {
+                            "text": question.get("text"),
+                            "options": [{"text": o.get("text")} for o in question.get("options", [])],
+                            "id": str(next_idx) # Simple ID
+                        },
+                        "timeLimit": question.get("time_limit", 30),
+                        "index": next_idx,
+                        "total": len(questions)
+                    }
+                })
+            else:
+                # End of Game
+                state["status"] = "leaderboard"
+                self.room_states[room_code] = state
+                
+                # Sort leaderboard
+                sorted_participants = sorted(state.get("participants", []), key=lambda x: x["score"], reverse=True)
+                
+                await self.broadcast(room_code, {
+                    "type": "leaderboard_update", 
+                    "payload": sorted_participants
+                })
+
+        elif cmd_type == "submit_answer":
+            if state.get("status") != "question":
+                return # Ignore late answers
+            
+            q_idx = state.get("current_question")
+            if q_idx == -1: return
+
+            questions = state.get("questions", [])
+            if q_idx >= len(questions): return
+
+            question = questions[q_idx]
+            option_idx = payload.get("optionIdx")
+            
+            # Validation
+            if option_idx is None or not isinstance(option_idx, int): return
+            
+            options = question.get("options", [])
+            if 0 <= option_idx < len(options):
+                is_correct = options[option_idx].get("is_correct", False)
+                
+                if is_correct:
+                    # Find player and update score
+                    for p in state.get("participants", []):
+                        if p["id"] == player_id:
+                            # Score logic: 100 points base + time bonus? For now fixed 100.
+                            p["score"] = p.get("score", 0) + 100
+                            break
+                    
+                    # Optional: Broadcast live score? Or wait for leaderboard.
+                    # Host might want to see who answered?
+                    pass
+        
+        elif cmd_type == "game_over":
+             state["status"] = "game_over"
+             self.room_states[room_code] = state
+             await self.broadcast(room_code, {"type": "game_over"})
+
     async def broadcast(self, room_code: str, message: dict, exclude_player: str = None):
         if room_code in self.active_connections:
-            # Game Logic Interception
-            msg_type = message.get("type")
-            state = self.room_states.get(room_code, {})
-            
-            if msg_type == "start_game":
-                state["status"] = "countdown"
-                message["type"] = "game_start" # Uniform type for clients
-                
-            elif msg_type == "next_question":
-                # Advance question index
-                current_q = state.get("current_question", -1)
-                questions = state.get("questions", [])
-                
-                next_idx = current_q + 1
-                
-                if next_idx < len(questions):
-                    state["current_question"] = next_idx
-                    state["status"] = "question"
-                    
-                    # Send new question payload
-                    question = questions[next_idx]
-                    # ensure id is string if needed, or pydantic handles it
-                    
-                    # Convert to client-safe question (hide correct answer if needed, but for now sending full)
-                    # Ideally we should strip is_correct from options for participants
-                    
-                    message = {
-                        "type": "new_question",
-                        "payload": {
-                            "question": question,
-                            "timeLimit": question.get("time_limit", 30),
-                            "index": next_idx,
-                            "total": len(questions)
-                        }
-                    }
-                else:
-                    # End of Quiz
-                    state["status"] = "leaderboard" # or directly game over?
-                    # Let's say we go to leaderboard after last question, then host clicks End Game
-                    # But if we want to auto-end:
-                    # message = {"type": "game_over"}
-                    # state["status"] = "game_over"
-                    
-                    # For now, let's just cycle to Leaderboard as per HostView logic
-                    state["status"] = "leaderboard"
-                    message = {"type": "leaderboard_update", "payload": state.get("leaderboard", [])}
-
-            elif msg_type == "game_over":
-                 state["status"] = "game_over"
-
-            # Update state persistence
-            self.room_states[room_code] = state
-
             for player_id, connection in self.active_connections[room_code].items():
                 if player_id != exclude_player:
                     try:
                         await connection.send_json(message)
                     except Exception as e:
-                         logger.error(f"Error broadcasting to {player_id}: {e}")
-                        # Potential optimization: mark for disconnect
+                         # logger.error(f"Error broadcasting to {player_id}: {e}")
+                         pass
 
     async def get_room_count(self, room_code: str) -> int:
         return len(self.active_connections.get(room_code, {}))

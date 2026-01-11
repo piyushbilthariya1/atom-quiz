@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+import json
 from app.core.config import settings
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
 from app.db.redis import connect_to_redis, close_redis_connection
@@ -98,9 +99,13 @@ async def websocket_endpoint(websocket: WebSocket, room_code: str, client_id: st
     await manager.connect(room_code, client_id, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            # Echo logic for now, enabling room broadcast
-            await manager.broadcast(room_code, {"type": "chat", "user": client_id, "msg": data}, exclude_player=client_id)
+            # Expecting JSON commands
+            data_str = await websocket.receive_text()
+            try:
+                data = json.loads(data_str)
+                await manager.handle_command(room_code, client_id, data)
+            except json.JSONDecodeError:
+                pass
     except WebSocketDisconnect:
         manager.disconnect(room_code, client_id)
         await manager.broadcast(room_code, {"type": "disconnect", "user": client_id})

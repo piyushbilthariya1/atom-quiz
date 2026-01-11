@@ -10,7 +10,26 @@ const GameRoom = ({ isHost: isHostProp }) => {
     const isHost = isHostProp;
 
     // Mock User ID for demo – in real app, get from Context/Auth
-    const [userId] = useState(() => searchParams.get('userId') || `guest_${Math.floor(Math.random() * 10000)}`);
+    // Persistent User ID logic to prevent duplicates on reload
+    const [userId] = useState(() => {
+        const paramId = searchParams.get('userId');
+        const storageKey = `quizpulse_user_${roomCode}`;
+
+        // Priority 1: URL Param (Always overrides if present, e.g. from Join screen)
+        if (paramId) {
+            sessionStorage.setItem(storageKey, paramId);
+            return paramId;
+        }
+
+        // Priority 2: Session Storage (Recover from reload)
+        const storedId = sessionStorage.getItem(storageKey);
+        if (storedId) return storedId;
+
+        // Priority 3: Random Guest (First time direct visit)
+        const newId = `guest_${Math.floor(Math.random() * 10000)}`;
+        sessionStorage.setItem(storageKey, newId);
+        return newId;
+    });
 
     const { isConnected, gameState, sendAction, lastError } = useQuizSocket(roomCode, userId);
 
