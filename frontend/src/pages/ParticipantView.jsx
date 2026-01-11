@@ -13,6 +13,7 @@ const ParticipantView = ({ gameState, sendAction, userId }) => {
     const [responses, setResponses] = useState({}); // { "0": 1, "1": 3 } (QuestionIndex: OptionIndex)
     const [reviewList, setReviewList] = useState(new Set());
     const [visitedList, setVisitedList] = useState(new Set(["0"]));
+    const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
     // Sync state from server on load/reconnect
     useEffect(() => {
@@ -127,16 +128,18 @@ const ParticipantView = ({ gameState, sendAction, userId }) => {
 
     return (
         <div className="flex flex-col md:flex-row h-full gap-4 p-4 max-w-7xl mx-auto">
-            {/* Main Question Area */}
-            <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+            {/* Main Question Area - Mobile Optimized */}
+            <div className="flex-1 flex flex-col bg-card border border-border rounded-xl shadow-sm overflow-hidden h-full">
                 {/* Header */}
                 <div className="p-4 border-b border-border flex justify-between items-center bg-secondary/20">
                     <h2 className="font-semibold text-lg">Question {currentQIndex + 1}</h2>
-                    <div className="text-xs font-mono text-muted-foreground">ID: {currentQ.id}</div>
+                    <div className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-1 rounded">
+                        ID: {currentQ.id}
+                    </div>
                 </div>
 
-                {/* Question Content */}
-                <div className="flex-1 p-6 md:p-8 overflow-y-auto">
+                {/* Question Content - Scrollable */}
+                <div className="flex-1 p-6 md:p-8 overflow-y-auto pb-24 md:pb-8">
                     <p className="text-xl md:text-2xl font-medium leading-relaxed mb-8">{currentQ.text}</p>
 
                     <div className="space-y-3">
@@ -147,17 +150,17 @@ const ParticipantView = ({ gameState, sendAction, userId }) => {
                                     key={idx}
                                     onClick={() => handleOptionSelect(idx)}
                                     className={cn(
-                                        "flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all hover:bg-zinc-800/50",
+                                        "flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all active:scale-98 touch-manipulation",
                                         isSelected
                                             ? "border-primary bg-primary/10"
-                                            : "border-border bg-transparent"
+                                            : "border-border bg-card hover:bg-zinc-800/50"
                                     )}
                                 >
                                     <div className={cn(
-                                        "w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center",
+                                        "w-8 h-8 rounded-full border-2 mr-4 flex-shrink-0 flex items-center justify-center",
                                         isSelected ? "border-primary" : "border-muted-foreground"
                                     )}>
-                                        {isSelected && <div className="w-3 h-3 rounded-full bg-primary" />}
+                                        {isSelected && <div className="w-4 h-4 rounded-full bg-primary" />}
                                     </div>
                                     <span className="text-lg">{opt.text}</span>
                                 </div>
@@ -166,20 +169,35 @@ const ParticipantView = ({ gameState, sendAction, userId }) => {
                     </div>
                 </div>
 
-                {/* Footer Controls */}
-                <div className="p-4 border-t border-border bg-secondary/10 flex flex-wrap gap-2 justify-between">
+                {/* Desktop Footer Controls */}
+                <div className="hidden md:flex p-4 border-t border-border bg-secondary/10 gap-2 justify-between">
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={handleMarkReview}>
                             {reviewList.has(String(currentQIndex)) ? "Unmark Review" : "Mark for Review"}
                         </Button>
-                        <Button variant="ghost" onClick={handleClear}>Clear Response</Button>
+                        <Button variant="ghost" onClick={handleClear}>Clear</Button>
                     </div>
                     <Button onClick={handleSaveNext} className="min-w-[120px]">Save & Next</Button>
                 </div>
             </div>
 
-            {/* Sidebar Palette */}
-            <div className="w-full md:w-80 flex-shrink-0">
+            {/* Mobile Bottom Navigation Bar */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border p-3 flex justify-between items-center z-50 px-6">
+                <Button variant="ghost" size="sm" onClick={() => handleNav(currentQIndex - 1)} disabled={currentQIndex === 0}>
+                    &larr; Prev
+                </Button>
+
+                <Button variant="secondary" onClick={() => setIsPaletteOpen(true)}>
+                    Palette
+                </Button>
+
+                <Button onClick={handleSaveNext}>
+                    Next &rarr;
+                </Button>
+            </div>
+
+            {/* Sidebar Palette (Desktop) */}
+            <div className="hidden md:flex flex-col w-80 flex-shrink-0 gap-4">
                 <QuestionPalette
                     totalQuestions={questions.length}
                     currentQuestionIndex={currentQIndex}
@@ -188,17 +206,53 @@ const ParticipantView = ({ gameState, sendAction, userId }) => {
                     reviewList={reviewList}
                     visitedList={visitedList}
                 />
-
-                <div className="mt-4">
-                    <Button
-                        variant="primary"
-                        className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
-                        onClick={handleSubmitTest}
-                    >
-                        Submit Test
-                    </Button>
-                </div>
+                <Button
+                    variant="primary"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
+                    onClick={handleSubmitTest}
+                >
+                    Submit Test
+                </Button>
             </div>
+
+            {/* Mobile Palette Drawer Overlay */}
+            {isPaletteOpen && (
+                <div className="md:hidden fixed inset-0 z-[100] bg-background/95 backdrop-blur-sm flex flex-col p-6 animate-in slide-in-from-bottom-10">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">All Questions</h2>
+                        <Button variant="ghost" onClick={() => setIsPaletteOpen(false)}>Close</Button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto mb-4">
+                        <QuestionPalette
+                            totalQuestions={questions.length}
+                            currentQuestionIndex={currentQIndex}
+                            onQuestionSelect={(idx) => {
+                                handleNav(idx);
+                                setIsPaletteOpen(false);
+                            }}
+                            responses={responses}
+                            reviewList={reviewList}
+                            visitedList={visitedList}
+                        />
+                    </div>
+
+                    <div className="pt-4 border-t border-border">
+                        <div className="flex gap-2 mb-4">
+                            <Button variant="outline" className="flex-1" onClick={handleMarkReview}>
+                                {reviewList.has(String(currentQIndex)) ? "Unmark" : "Mark Review"}
+                            </Button>
+                            <Button variant="outline" className="flex-1" onClick={handleClear}>Clear</Button>
+                        </div>
+                        <Button
+                            className="w-full bg-green-600 hover:bg-green-700 py-6 text-lg"
+                            onClick={handleSubmitTest}
+                        >
+                            Submit Test
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
