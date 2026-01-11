@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+motor
+redis
+google-generativeai
+pydantic
+pydantic-settings
+python-multipart
+
+certifi
+dnspython

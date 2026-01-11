@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-surface border border-border shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-card border border-border hover:bg-zinc-800/50 transition-colors duration-200;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+}
+
+body {
+  @apply bg-background text-slate-100 min-h-screen font-sans antialiased overflow-x-hidden;
+}
