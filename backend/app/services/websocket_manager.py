@@ -20,6 +20,17 @@ class ConnectionManager:
             self.active_connections[room_code] = {}
             self.room_states[room_code] = {"status": "lobby", "current_question": -1}
         
+        if "participants" not in self.room_states[room_code]:
+             self.room_states[room_code]["participants"] = []
+
+        # Check if user already in list to avoid duplicates on reconnect
+        existing_user = next((p for p in self.room_states[room_code]["participants"] if p["id"] == player_id), None)
+        
+        if not existing_user:
+             # Since client_id passed in URL IS the nickname based on frontend logic
+             new_participant = {"id": player_id, "nickname": player_id, "score": 0}
+             self.room_states[room_code]["participants"].append(new_participant)
+
         self.active_connections[room_code][player_id] = websocket
         logger.info(f"Player {player_id} connected to room {room_code}")
         
@@ -31,6 +42,16 @@ class ConnectionManager:
             }, 
             websocket
         )
+
+        # Broadcast participant list update to EVERYONE (including host)
+        await self.broadcast(
+            room_code, 
+            {
+                "type": "participant_update", 
+                "payload": self.room_states[room_code]["participants"]
+            }
+        )
+
 
     def disconnect(self, room_code: str, player_id: str):
         if room_code in self.active_connections:
