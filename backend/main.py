@@ -62,28 +62,39 @@ async def create_room_endpoint(request: CreateRoomRequest):
 
     try:
         db = await get_database()
+        quiz = None
+        
+        # Try finding by ObjectId
         if ObjectId.is_valid(request.quiz_id):
-             quiz = await db["quizzes"].find_one({"_id": ObjectId(request.quiz_id)})
-             if quiz:
-                 # Initialize room with quiz questions
-                 # Note: We are setting state in the Single Manager Instance
-                 manager.room_states[room_code] = {
-                     "status": "lobby",
-                     "current_question": -1,
-                     "quiz_data": quiz, 
-                     "questions": quiz.get("questions", []),
-                     "participants": [],
-                     "leaderboard": []
-                 }
-                 # Pre-populate active_connections dict so connection logic knows room exists
-                 # (Optional, but good for validation)
-                 manager.active_connections[room_code] = {}
-                 
-                 return {"room_code": room_code}
+            quiz = await db["quizzes"].find_one({"_id": ObjectId(request.quiz_id)})
+        
+        # Fallback to String ID if not found
+        if not quiz:
+             quiz = await db["quizzes"].find_one({"_id": request.quiz_id})
+
+        if quiz:
+             # Initialize room with quiz questions
+             # Note: We are setting state in the Single Manager Instance
+             manager.room_states[room_code] = {
+                 "status": "lobby",
+                 "current_question": -1,
+                 "quiz_data": quiz, # Store full quiz to allow extracting questions
+                 "questions": quiz.get("questions", []), 
+                 "participants": [],
+                 "leaderboard": []
+             }
+             # Pre-populate active_connections dict so connection logic knows room exists
+             manager.active_connections[room_code] = {}
+             
+             return {"room_code": room_code}
+        else:
+            raise HTTPException(status_code=404, detail="Quiz not found")
+
+    except HTTPException as he:
+        raise he
     except Exception as e:
         print(f"Error creating room: {e}")
-        
-    raise HTTPException(status_code=500, detail="Failed to create room")
+        raise HTTPException(status_code=500, detail="Failed to create room")
 
 @app.websocket("/ws/{room_code}/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, room_code: str, client_id: str):
