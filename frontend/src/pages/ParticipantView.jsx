@@ -1,8 +1,3 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { useProctor } from '@/hooks/useProctor';
-import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/Components';
 
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
