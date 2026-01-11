@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Components';
 import QuestionPalette from '@/components/quiz/QuestionPalette';
 
