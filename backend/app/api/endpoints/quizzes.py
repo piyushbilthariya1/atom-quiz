@@ -48,7 +48,18 @@ async def show_quiz(id: str):
 @router.delete("/{id}", response_description="Delete a quiz")
 async def delete_quiz(id: str):
     db = await get_database()
-    delete_result = await db["quizzes"].delete_one({"_id": ObjectId(id)})
+    
+    # Try deleting by ObjectId first
+    try:
+        delete_result = await db["quizzes"].delete_one({"_id": ObjectId(id)})
+        if delete_result.deleted_count == 1:
+            return JSONResponse(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception:
+        pass # invalid objectid or not found
+
+    # Fallback to string ID
+    delete_result = await db["quizzes"].delete_one({"_id": id})
     if delete_result.deleted_count == 1:
         return JSONResponse(status_code=status.HTTP_204_NO_CONTENT)
+
     raise HTTPException(status_code=404, detail=f"Quiz {id} not found")
