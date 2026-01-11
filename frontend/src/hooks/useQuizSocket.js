@@ -53,6 +53,7 @@ export const useQuizSocket = (roomCode, userId) => {
     }, [roomCode, userId]);
 
     const handleServerMessage = (message) => {
+        // console.log("Received:", message.type, message.payload); // Debug logging
         switch (message.type) {
             case 'state_sync':
                 // Initial state recovery or reconnnect
@@ -62,21 +63,31 @@ export const useQuizSocket = (roomCode, userId) => {
                 setGameState(prev => ({ ...prev, participants: message.payload }));
                 break;
             case 'game_start':
-                setGameState(prev => ({ ...prev, status: 'countdown', timeLeft: 5 }));
+                // NTA Flow: Start = Active, Payload contains questions
+                setGameState(prev => ({
+                    ...prev,
+                    status: 'active',
+                    ...message.payload
+                }));
                 break;
+            // Legacy/Unused cases removed or kept minimal
             case 'new_question':
+                // If we ever revert to sync flow
                 setGameState(prev => ({
                     ...prev,
                     status: 'question',
-                    currentQuestion: message.payload.question,
-                    timeLeft: message.payload.timeLimit
+                    currentQuestion: message.payload.question
                 }));
                 break;
             case 'leaderboard_update':
                 setGameState(prev => ({ ...prev, leaderboard: message.payload }));
                 break;
             case 'game_over':
-                setGameState(prev => ({ ...prev, status: 'game_over' }));
+                setGameState(prev => ({
+                    ...prev,
+                    status: 'game_over',
+                    ...message.payload
+                }));
                 break;
             default:
                 console.warn("Unknown message type:", message.type);
