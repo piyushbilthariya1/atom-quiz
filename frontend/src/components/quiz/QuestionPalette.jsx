@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils'; // Assuming Shadcn util exists
-import { ScrollArea } from '@/components/ui/scroll-area'; // Assuming Shadcn ScrollArea
+
 
 const QuestionPalette = ({
     totalQuestions,
