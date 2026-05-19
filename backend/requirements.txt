@@ -3,13 +3,18 @@ uvicorn[standard]
 motor
 redis
 
-pydantic
+pydantic[email]
 pydantic-settings
+pydantic-core
 python-multipart
 
 certifi
 dnspython
 
 passlib[bcrypt]
+bcrypt
 python-jose[cryptography]
 python-dotenv
+
+gunicorn
+websockets

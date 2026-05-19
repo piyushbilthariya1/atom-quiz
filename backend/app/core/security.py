@@ -1,10 +1,11 @@
 import bcrypt
+import os
 from datetime import datetime, timedelta
 from typing import Any, Union
 from jose import jwt
 
 ALGORITHM = "HS256"
-SECRET_KEY = "your-secret-key-change-this-in-production" # Should be in settings
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def create_access_token(subject: Union[str, Any], expires_delta: timedelta = None) -> str:

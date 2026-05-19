@@ -14,10 +14,15 @@ app = FastAPI(title=settings.PROJECT_NAME)
 app.include_router(auth.router, tags=["Auth"], prefix="/api/auth")
 app.include_router(quizzes.router, tags=["Quizzes"], prefix="/api/quizzes")
 
-# Set all CORS enabled origins
+import os
+
+# CORS — read allowed origins from env, fallback to allow-all for dev
+frontend_url = os.getenv("FRONTEND_URL", "*")
+cors_origins = [frontend_url] if frontend_url != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow all for dev
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
