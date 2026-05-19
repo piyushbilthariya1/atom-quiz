@@ -24,8 +24,8 @@ class QuizBase(BaseModel):
     difficulty_level: str = "mixed"
 
 class QuizCreate(QuizBase):
-    organization_id: str
-    created_by: str # User ID
+    organization_id: Optional[str] = None
+    created_by: Optional[str] = None
     questions: List[Question] = []
 
 class QuizDB(QuizBase):
@@ -37,6 +37,6 @@ class QuizDB(QuizBase):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}

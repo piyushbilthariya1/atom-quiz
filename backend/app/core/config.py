@@ -27,8 +27,13 @@ class Settings(BaseSettings):
     # AI
     GOOGLE_API_KEY: str = ""
 
+    # Security
+    ADMIN_INVITE_CODE: str = "vexite"
+    PARTICIPANT_INVITE_CODE: str = "vexite"
+
     class Config:
         case_sensitive = True
+        extra = "ignore"
         env_file = ".env"
 
 settings = Settings()

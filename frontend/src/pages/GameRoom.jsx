@@ -52,17 +52,12 @@ const GameRoom = ({ isHost: isHostProp }) => {
     }
 
     return (
-        <div className="min-h-screen w-full bg-background overflow-hidden relative">
-            {/* Background Atmosphere */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 via-background to-background -z-10" />
-
-            <div className="container mx-auto h-screen p-4 md:p-6">
-                {isHost ? (
-                    <HostView gameState={gameState} sendAction={sendAction} roomCode={roomCode} />
-                ) : (
-                    <ParticipantView gameState={gameState} sendAction={sendAction} userId={userId} />
-                )}
-            </div>
+        <div className="h-screen w-full overflow-hidden">
+            {isHost ? (
+                <HostView gameState={gameState} sendAction={sendAction} roomCode={roomCode} />
+            ) : (
+                <ParticipantView gameState={gameState} sendAction={sendAction} userId={userId} />
+            )}
         </div>
     );
 };

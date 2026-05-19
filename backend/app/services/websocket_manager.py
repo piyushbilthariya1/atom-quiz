@@ -52,14 +52,21 @@ class ConnectionManager:
              user_record = next((p for p in state["participants"] if p["id"] == player_id), {})
              start_payload = {
                  "questions": questions_sanitized,
-                 "my_answers": user_record.get("answers", {}),
-                 "status": state.get("status")
+                 "my_answers": user_record.get("answers", {})
              }
+
+        # Build clean state (remove quiz_data which contains ObjectId, and unsanitized questions)
+        clean_state = {
+            "status": state.get("status", "lobby"),
+            "participants": state.get("participants", []),
+            "leaderboard": state.get("leaderboard", []),
+            "current_question": state.get("current_question", -1)
+        }
 
         await self.send_personal_message(
             {
                 "type": "state_sync", 
-                "payload": {**state, **start_payload}
+                "payload": {**clean_state, **start_payload}
             }, 
             websocket
         )

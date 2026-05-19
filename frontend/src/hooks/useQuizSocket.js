@@ -35,14 +35,18 @@ export const useQuizSocket = (roomCode, userId) => {
             }
         };
 
-        socketRef.current.onclose = () => {
-            console.log("Disconnected from QuizPulse WebSocket");
+        socketRef.current.onclose = (event) => {
+            console.log("Disconnected from QuizPulse WebSocket", event.code);
             setIsConnected(false);
+            if (event.code === 4000) {
+                setLastError("Session has expired or room no longer exists.");
+            }
         };
 
         socketRef.current.onerror = (error) => {
             console.error("WebSocket Error:", error);
-            setLastError("Connection Error");
+            // Only set generic error if we haven't set a specific one
+            setLastError(prev => prev || "Connection Error");
         };
 
         return () => {

@@ -6,7 +6,11 @@ class Database:
 
 db = Database()
 
+from fastapi import HTTPException
+
 async def get_database():
+    if db.client is None:
+        raise HTTPException(status_code=503, detail="Database connection is not available. Please start MongoDB.")
     return db.client[settings.DATABASE_NAME]
 
 import certifi

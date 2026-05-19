@@ -7,21 +7,21 @@ from app.db.mongodb import connect_to_mongo, close_mongo_connection
 from app.db.redis import connect_to_redis, close_redis_connection
 from app.services.websocket_manager import manager
 
-from app.api.endpoints import quizzes
+from app.api.endpoints import quizzes, auth
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
+app.include_router(auth.router, tags=["Auth"], prefix="/api/auth")
 app.include_router(quizzes.router, tags=["Quizzes"], prefix="/api/quizzes")
 
 # Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"], # Allow all for dev
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Allow all for dev
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup_event():

@@ -1,21 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Inter:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .glass-panel {
-    @apply bg-surface border border-border shadow-xl;
+:root {
+  --background: #000000;
+  --primary: #F25623;
+  --secondary: #1F1F1F;
+  --text-main: #FFFFFF;
+  --text-dim: #A3A3A3;
+  
+  --primary-rgb: 242, 86, 35;
+}
+
+@layer base {
+  body {
+    @apply bg-[#000000] text-white font-sans antialiased;
+    letter-spacing: -0.01em;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Alactic OS V3 - Pure Surgical Edition */
+  
+  .bg-level-1 { background-color: rgba(31, 31, 31, 0.4); }
+  .bg-level-2 { background-color: rgba(31, 31, 31, 0.6); }
+  
   .glass-card {
-    @apply bg-card border border-border hover:bg-zinc-800/50 transition-colors duration-200;
+    background: rgba(10, 10, 10, 0.8);
+    border: 1px solid #1F1F1F;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+    border-radius: 12px;
   }
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  .ambient-glow {
+    background: 
+      radial-gradient(circle at 50% -20%, rgba(242, 86, 35, 0.08) 0%, transparent 60%);
+  }
+
+  /* Page Frame */
+  .page-frame {
+    @apply max-w-5xl mx-auto;
+  }
+
+  /* 5xl Vertical Anchors */
+  .v-line {
+    @apply fixed top-0 bottom-0 w-px bg-[#1F1F1F] z-[150] pointer-events-none hidden lg:block;
+  }
+  .v-line-left { left: calc(50% - 32rem); }
+  .v-line-right { left: calc(50% + 32rem); }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1F1F1F;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #F25623;
   }
 }
 
-body {
-  @apply bg-background text-slate-100 min-h-screen font-sans antialiased overflow-x-hidden;
-}
+/* Custom Utilities */
+.font-display { font-family: 'League Spartan', sans-serif; }
+.font-sans { font-family: 'Inter', sans-serif; }

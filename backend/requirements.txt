@@ -9,3 +9,7 @@ python-multipart
 
 certifi
 dnspython
+
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
